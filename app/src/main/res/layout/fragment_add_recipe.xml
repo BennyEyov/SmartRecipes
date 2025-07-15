@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp"
+    tools:context=".ui.AddRecipeFragment">
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <EditText
+            android:id="@+id/titleEditText"
+            android:hint="Recipe Title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <EditText
+            android:id="@+id/ingredientsEditText"
+            android:hint="Ingredients"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minLines="3"
+            android:gravity="top" />
+
+        <EditText
+            android:id="@+id/instructionsEditText"
+            android:hint="Instructions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minLines="3"
+            android:gravity="top" />
+
+        <Spinner
+            android:id="@+id/difficultySpinner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:entries="@array/difficulty_levels" />
+
+        <TimePicker
+            android:id="@+id/timePicker"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <ImageView
+            android:id="@+id/recipeImageView"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:scaleType="centerCrop"
+            android:layout_marginTop="8dp"/>
+
+        <Button
+            android:id="@+id/chooseImageButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Choose Image" />
+
+        <Button
+            android:id="@+id/saveRecipeButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Save Recipe"
+            android:layout_marginTop="12dp"/>
+    </LinearLayout>
+
+</FrameLayout>

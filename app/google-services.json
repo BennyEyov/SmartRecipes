@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "16609774433",
+    "project_id": "smartrecipes-734fa",
+    "storage_bucket": "smartrecipes-734fa.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:16609774433:android:c53a165f36dabdbe73d320",
+        "android_client_info": {
+          "package_name": "com.example.smartrecipes"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA0MbC_h2Zigao9e71O9o8ukhN4mwLpuko"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
