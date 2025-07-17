@@ -29,9 +29,13 @@ public class AddRecipeFragment extends Fragment {
 
     private EditText titleEditText, ingredientsEditText, instructionsEditText;
     private Spinner difficultySpinner;
-    private TimePicker timePicker;
-    private ImageView imageView;
-    private Button chooseImageBtn;
+    private NumberPicker hourPicker;
+
+    private NumberPicker minutePicker;
+
+    private ImageView recipeImageView;
+    private Button saveBtn;
+
     private Uri imageUri;
 
     private static final int PICK_IMAGE_REQUEST = 1;
@@ -47,13 +51,16 @@ public class AddRecipeFragment extends Fragment {
         ingredientsEditText = view.findViewById(R.id.ingredientsEditText);
         instructionsEditText = view.findViewById(R.id.instructionsEditText);
         difficultySpinner = view.findViewById(R.id.difficultySpinner);
-        timePicker = view.findViewById(R.id.timePicker);
-        timePicker.setIs24HourView(true);
-        imageView = view.findViewById(R.id.recipeImageView);
-        chooseImageBtn = view.findViewById(R.id.chooseImageButton);
-        Button saveBtn = view.findViewById(R.id.saveRecipeButton);
+        hourPicker = view.findViewById(R.id.hourPicker);
+        minutePicker = view.findViewById(R.id.minutePicker);
+        hourPicker.setMinValue(0);
+        hourPicker.setMaxValue(23);
+        minutePicker.setMinValue(0);
+        minutePicker.setMaxValue(59);
+        recipeImageView  = view.findViewById(R.id.recipeImageView);
+        saveBtn = view.findViewById(R.id.saveRecipeButton);
 
-        chooseImageBtn.setOnClickListener(v -> openImagePicker());
+        recipeImageView.setOnClickListener(v -> openImagePicker());
         saveBtn.setOnClickListener(v -> saveRecipe());
 
         return view;
@@ -74,7 +81,7 @@ public class AddRecipeFragment extends Fragment {
             try {
                 Bitmap bitmap = MediaStore.Images.Media.getBitmap(
                         requireActivity().getContentResolver(), imageUri);
-                imageView.setImageBitmap(bitmap);
+                recipeImageView.setImageBitmap(bitmap);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -87,17 +94,19 @@ public class AddRecipeFragment extends Fragment {
         String ingredients = ingredientsEditText.getText().toString();
         String instructions = instructionsEditText.getText().toString();
         String difficulty = difficultySpinner.getSelectedItem().toString();
-        int hours = timePicker.getHour();
-        int minutes = timePicker.getMinute();
+        String duration = String.format("%02d:%02d",
+                hourPicker.getValue(), minutePicker.getValue());
 
         if (imageUri != null) {
-            FirebaseStorage.getInstance().getReference("recipes/" + UUID.randomUUID())
+            String fileName = "recipes/" + UUID.randomUUID() + ".jpg";
+
+            FirebaseStorage.getInstance().getReference(fileName)
                     .putFile(imageUri)
                     .addOnSuccessListener(taskSnapshot -> taskSnapshot.getStorage().getDownloadUrl()
                             .addOnSuccessListener(uri -> {
                                 Recipe recipe = new Recipe(
                                         title, ingredients, instructions,
-                                        difficulty, hours + ":" + minutes,
+                                        difficulty, duration,
                                         uri.toString(), false
                                 );
                                 FirebaseDatabase.getInstance()
@@ -106,7 +115,13 @@ public class AddRecipeFragment extends Fragment {
                                         .push()
                                         .setValue(recipe);
                                 Toast.makeText(getContext(), "Recipe saved", Toast.LENGTH_SHORT).show();
-                            }));
+                            }))
+                    .addOnFailureListener(e -> {
+                        Toast.makeText(getContext(), "Image upload failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    });
+        } else {
+            Toast.makeText(getContext(), "Please select an image", Toast.LENGTH_SHORT).show();
         }
+
     }
 }

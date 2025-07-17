@@ -1,68 +1,148 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:padding="16dp"
     tools:context=".ui.AddRecipeFragment">
 
     <LinearLayout
         android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal">
 
+        <!-- כותרת עליונה -->
+        <TextView
+            android:id="@+id/uploadTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Upload Recipe"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="16dp"
+            android:gravity="center"
+            android:textColor="#000000" />
+
+        <!-- תמונה לחיצה -->
+        <ImageView
+            android:id="@+id/recipeImageView"
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:layout_gravity="center"
+            android:scaleType="fitCenter"
+            android:src="@drawable/placeholder_image"
+            android:layout_marginBottom="16dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="Click to choose image" />
+
+        <!-- Title -->
         <EditText
             android:id="@+id/titleEditText"
             android:hint="Recipe Title"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="48dp"
+            android:textSize="16sp" />
 
+        <!-- Difficulty Spinner -->
+        <Spinner
+            android:id="@+id/difficultySpinner"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="8dp"
+            android:spinnerMode="dropdown"
+            android:padding="8dp"
+            android:entries="@array/difficulty_levels"/>
+
+        <!-- Duration בשורה אחת -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="12dp">
+
+            <!-- טקסט Duration -->
+            <TextView
+                android:id="@+id/durationLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Duration:"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                android:layout_marginStart="0dp" />
+
+            <!-- מספר שעות -->
+            <NumberPicker
+                android:id="@+id/hourPicker"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:scaleX="1"
+                android:scaleY="1"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toEndOf="@+id/durationLabel"
+                app:layout_constraintEnd_toStartOf="@+id/colonText"
+                android:layout_marginStart="8dp" />
+
+            <!-- נקודתיים -->
+            <TextView
+                android:id="@+id/colonText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=":"
+                android:textSize="18sp"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toEndOf="@id/hourPicker"
+                app:layout_constraintEnd_toStartOf="@+id/minutePicker"
+                android:layout_marginHorizontal="4dp" />
+
+            <!-- מספר דקות -->
+            <NumberPicker
+                android:id="@+id/minutePicker"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:scaleX="1"
+                android:scaleY="1"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toEndOf="@id/colonText"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:layout_marginEnd="8dp" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+        <!-- Ingredients -->
         <EditText
             android:id="@+id/ingredientsEditText"
             android:hint="Ingredients"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:minLines="3"
-            android:gravity="top" />
+            android:gravity="top"
+            android:layout_marginTop="12dp"
+            android:textSize="16sp" />
 
+        <!-- Instructions -->
         <EditText
             android:id="@+id/instructionsEditText"
             android:hint="Instructions"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:minLines="3"
-            android:gravity="top" />
+            android:gravity="top"
+            android:textSize="16sp" />
 
-        <Spinner
-            android:id="@+id/difficultySpinner"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:entries="@array/difficulty_levels" />
-
-        <TimePicker
-            android:id="@+id/timePicker"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
-
-        <ImageView
-            android:id="@+id/recipeImageView"
-            android:layout_width="match_parent"
-            android:layout_height="200dp"
-            android:scaleType="centerCrop"
-            android:layout_marginTop="8dp"/>
-
-        <Button
-            android:id="@+id/chooseImageButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Choose Image" />
-
+        <!-- כפתור שמירה -->
         <Button
             android:id="@+id/saveRecipeButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Save Recipe"
-            android:layout_marginTop="12dp"/>
+            android:layout_marginTop="16dp" />
     </LinearLayout>
-
-</FrameLayout>
+</ScrollView>
