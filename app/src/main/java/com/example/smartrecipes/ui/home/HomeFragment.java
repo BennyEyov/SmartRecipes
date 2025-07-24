@@ -2,12 +2,21 @@ package com.example.smartrecipes.ui.home;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.SearchView;
+import androidx.appcompat.widget.Toolbar;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -29,10 +38,21 @@ public class HomeFragment extends Fragment {
     private RecipeAdapter recipeAdapter;
     private List<Recipe> recipeList;
 
+    private List<Recipe> originalList = new ArrayList<>(); // שומר את כל המתכונים המקוריים
+    private String currentQuery = "";
+    private String currentDifficultyFilter = "";
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_home, container, false);
+
+        Toolbar toolbar = view.findViewById(R.id.homeToolbar);
+        toolbar.setTitle("All Recipes");
+        toolbar.setTitleTextColor(ContextCompat.getColor(requireContext(), R.color.black));
+        toolbar.setTitleTextAppearance(requireContext(), R.style.ToolbarTitleStyle);
+        ((AppCompatActivity) requireActivity()).setSupportActionBar(toolbar);
+        setHasOptionsMenu(true); // מאפשר לתפריט להיטען
 
         recyclerView = view.findViewById(R.id.recipesRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -42,10 +62,114 @@ public class HomeFragment extends Fragment {
 
         loadRecipesFromFirebase();
 
-        insertDefaultRecipesIfNeeded();
-
         return view;
     }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        // איפוס פילטרים
+        currentDifficultyFilter = "";
+        currentQuery = "";
+        applyFilters();
+    }
+
+
+    @Override
+    public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
+        inflater.inflate(R.menu.home_toolbar_menu, menu);
+
+        MenuItem searchItem = menu.findItem(R.id.action_search);
+        SearchView searchView = (SearchView) searchItem.getActionView();
+
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                filterRecipes(query);
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                filterRecipes(newText);
+                return true;
+            }
+        });
+
+        super.onCreateOptionsMenu(menu, inflater);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        int id = item.getItemId();
+
+        if (id == R.id.action_filter) {
+            showDifficultyFilterDialog();
+            return true;
+
+        } else if (id == R.id.action_logout) {
+            showLogoutConfirmationDialog();
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void showLogoutConfirmationDialog() {
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Logout")
+                .setMessage("Are you sure you want to log out?")
+                .setPositiveButton("Yes", (dialog, which) -> {
+                    FirebaseAuth.getInstance().signOut();
+
+                    // ננווט חזרה למסך ההתחברות
+//                    requireActivity()
+//                            .getSupportFragmentManager()
+//                            .popBackStack(null, androidx.fragment.app.FragmentManager.POP_BACK_STACK_INCLUSIVE);
+
+                    // ניווט עם NavController
+                    Bundle bundle = new Bundle(); // אופציונלי
+                    Navigation.findNavController(requireView()).navigate(R.id.loginFragment, bundle);
+
+                    Toast.makeText(requireContext(), "Logged out", Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+
+    private void filterRecipes(String query) {
+//        List<Recipe> filteredList = new ArrayList<>();
+//        for (Recipe recipe : recipeList) {
+//            if (recipe.getTitle().toLowerCase().contains(query.toLowerCase()) ||
+//                    recipe.getIngredients().toLowerCase().contains(query.toLowerCase())) {
+//                filteredList.add(recipe);
+//            }
+//        }
+//        recipeAdapter.updateData(filteredList);
+        currentQuery = query;
+        applyFilters();
+    }
+
+    private void showDifficultyFilterDialog() {
+        String[] difficulties = {"All", "Easy", "Medium", "Hard"};
+
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Filter by Difficulty")
+                .setItems(difficulties, (dialog, which) -> {
+                    if (which == 0) {
+                        currentDifficultyFilter = ""; // איפוס
+                    } else {
+                        currentDifficultyFilter = difficulties[which];
+                    }
+                    applyFilters();
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+
 
     private void loadRecipesFromFirebase() {
         String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
@@ -55,13 +179,16 @@ public class HomeFragment extends Fragment {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 recipeList.clear();
+                originalList.clear(); // נוסיף את זה
+
                 for (DataSnapshot recipeSnapshot : snapshot.getChildren()) {
                     Recipe recipe = recipeSnapshot.getValue(Recipe.class);
                     if (recipe != null) {
                         recipeList.add(recipe);
+                        originalList.add(recipe); // נוסיף את זה
                     }
                 }
-                recipeAdapter.updateData(recipeList);
+                applyFilters(); // במקום להציג ישירות
             }
 
             @Override
@@ -71,84 +198,28 @@ public class HomeFragment extends Fragment {
         });
     }
 
-    private void insertDefaultRecipesIfNeeded() {
-        String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
-        DatabaseReference userRecipesRef = FirebaseDatabase.getInstance().getReference("recipes").child(uid);
+    private void applyFilters() {
+        List<Recipe> filteredList = new ArrayList<>();
 
-        userRecipesRef.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                if (!snapshot.exists()) {
-                    // אין מתכונים - נכניס ברירת מחדל
-                    List<Recipe> defaultRecipes = getDefaultRecipes();
-                    for (Recipe recipe : defaultRecipes) {
-                        String recipeId = userRecipesRef.push().getKey();
-                        recipe.setId(recipeId);
-                        userRecipesRef.child(recipeId).setValue(recipe);
-                    }
-                    Toast.makeText(getContext(), "Welcome! Added default recipes.", Toast.LENGTH_SHORT).show();
-                }
-            }
+        for (Recipe recipe : originalList) {
+            boolean matchesQuery = currentQuery.isEmpty() ||
+                    recipe.getTitle().toLowerCase().contains(currentQuery.toLowerCase()) ||
+                    recipe.getIngredients().toLowerCase().contains(currentQuery.toLowerCase());
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                Toast.makeText(getContext(), "Failed to check default recipes", Toast.LENGTH_SHORT).show();
+            boolean matchesDifficulty = currentDifficultyFilter.isEmpty() ||
+                    recipe.getDifficulty().equalsIgnoreCase(currentDifficultyFilter);
+
+            if (matchesQuery && matchesDifficulty) {
+                filteredList.add(recipe);
             }
-        });
+        }
+
+        recipeAdapter.updateData(filteredList);
     }
 
-    private List<Recipe> getDefaultRecipes() {
-        List<Recipe> list = new ArrayList<>();
 
-        list.add(new Recipe("Pasta Bolognese",
-                "Pasta, Tomato, Beef",
-                "Cook beef, add tomato, mix with pasta",
-                "Medium", "00:30",
-                "https://images.unsplash.com/photo-1622973536968-3ead9e780960", false));
 
-        list.add(new Recipe("Simple Salad",
-                "Lettuce, Tomato, Cucumber",
-                "Chop and mix all",
-                "Easy", "00:10",
-                "https://images.unsplash.com/photo-1622973536968-3ead9e780960", false));
 
-        list.add(new Recipe("Omelette",
-                "Eggs, Cheese",
-                "Whisk and cook in pan",
-                "Easy", "00:07",
-                "https://images.unsplash.com/photo-1622973536968-3ead9e780960", false));
 
-        list.add(new Recipe("Pancakes",
-                "Flour, Milk, Eggs",
-                "Mix and fry",
-                "Easy", "00:20",
-                "https://images.unsplash.com/photo-1622973536968-3ead9e780960", false));
-
-        list.add(new Recipe("Chicken Curry",
-                "Chicken, Curry Paste, Coconut Milk",
-                "Cook all together",
-                "Hard", "01:00",
-                "https://images.unsplash.com/photo-1622973536968-3ead9e780960", false));
-
-        list.add(new Recipe("Grilled Cheese",
-                "Bread, Cheese",
-                "Grill until melted",
-                "Easy", "00:05",
-                "https://images.unsplash.com/photo-1622973536968-3ead9e780960", false));
-
-        list.add(new Recipe("Fruit Smoothie",
-                "Banana, Berries, Yogurt",
-                "Blend everything",
-                "Easy", "00:05",
-                "https://images.unsplash.com/photo-1622973536968-3ead9e780960", false));
-
-        list.add(new Recipe("Baked Potatoes",
-                "Potatoes, Salt",
-                "Bake in oven",
-                "Medium", "00:45",
-                "https://images.unsplash.com/photo-1622973536968-3ead9e780960", false));
-
-        return list;
-    }
 
 }

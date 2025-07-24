@@ -4,4 +4,14 @@
     <color name="white">#FFFFFFFF</color>
     <color name="purple_500">#6200EE</color>
     <color name="gray">#808080</color>
+    <color name="primary">#FF7043</color>
+    <color name="primary_light">#FFAB91</color>
+    <color name="cream_background">#FFF8F0</color>
+    <color name="bottom_nav_background">#FFFFFF</color>
+    <color name="bottom_nav_icon_selected">#FF7043</color>
+    <color name="bottom_nav_icon_unselected">#999999</color>
+    <color name="primaryColor">#FF7043</color> <!-- כתום-סלמון -->
+    <color name="app_background">#FFF8F3</color> <!-- רקע רך -->
+    <color name="primaryText">#333333</color>
+    <color name="secondaryText">#666666</color>
 </resources>

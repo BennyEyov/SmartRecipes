@@ -1,7 +1,10 @@
 package com.example.smartrecipes.ui;
 
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,7 +14,10 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.NavController;
+import androidx.navigation.Navigation;
 
 import com.bumptech.glide.Glide;
 import com.example.smartrecipes.R;
@@ -30,7 +36,7 @@ public class RecipeFragment extends Fragment {
     private Recipe currentRecipe;
 
     private MaterialToolbar toolbar;
-    private boolean isEditMode = false;
+    private boolean isInternet = false;
 
     @Nullable
     @Override
@@ -48,6 +54,7 @@ public class RecipeFragment extends Fragment {
         Bundle args = getArguments();
         if (args != null && args.containsKey("recipe")) {
             currentRecipe = args.getParcelable("recipe");
+            isInternet = args.getBoolean("isInternet");
 
             if (currentRecipe != null) {
                 titleTextView.setText(currentRecipe.getTitle());
@@ -73,37 +80,73 @@ public class RecipeFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         toolbar = view.findViewById(R.id.recipeToolbar);
-        toolbar.inflateMenu(R.menu.recipe_toolbar_menu);
+        toolbar.setTitle("Recipe Details");
+        toolbar.setTitleTextColor(ContextCompat.getColor(requireContext(), R.color.black));
+        toolbar.setTitleTextAppearance(requireContext(), R.style.ToolbarTitleStyle);
 
-        updateFavoriteIcon(toolbar.getMenu().findItem(R.id.action_toggle_favorite),
-                currentRecipe.isFavorite());
+        if (isInternet) {
+            toolbar.inflateMenu(R.menu.recipe_internet_toolbar_menu);
 
-        toolbar.setOnMenuItemClickListener(item -> {
-            int itemId = item.getItemId();
+            toolbar.setOnMenuItemClickListener(item -> {
+                if (item.getItemId() == R.id.action_add_recipe) {
+                    addRecipeToUserDatabase();
+                    return true;
+                }
+                return false;
+            });
 
-            if (itemId == R.id.action_toggle_favorite) {
-                currentRecipe.setFavorite(!currentRecipe.isFavorite());
-                updateFavoriteIcon(item, currentRecipe.isFavorite());
-                updateRecipeInFirebase(currentRecipe);
-                return true;
+        } else {
+            toolbar.inflateMenu(R.menu.recipe_toolbar_menu);
 
-            } else if (itemId == R.id.action_edit) {
-                enableEditMode();
-                return true;
+            updateFavoriteIcon(toolbar.getMenu().findItem(R.id.action_toggle_favorite),
+                    currentRecipe.isFavorite());
 
-            } else if (itemId == R.id.action_delete) {
-                deleteRecipe(currentRecipe.getId());
-                return true;
+            toolbar.setOnMenuItemClickListener(item -> {
+                int itemId = item.getItemId();
 
-            } else if (itemId == R.id.action_save) {
-                saveEditedRecipe();
-                return true;
-            }
+                if (itemId == R.id.action_toggle_favorite) {
+                    currentRecipe.setFavorite(!currentRecipe.isFavorite());
+                    updateFavoriteIcon(item, currentRecipe.isFavorite());
+                    updateRecipeInFirebase(currentRecipe);
+                    return true;
 
-            return false;
+                } else if (itemId == R.id.action_edit) {
+                    openEditFragment();
+                    return true;
 
-        });
+                } else if (itemId == R.id.action_delete) {
+                    deleteRecipe(currentRecipe.getId());
+                    return true;
+                }
+
+                return false;
+            });
+        }
     }
+
+    private void addRecipeToUserDatabase() {
+        String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        DatabaseReference userRecipesRef = FirebaseDatabase.getInstance()
+                .getReference("recipes")
+                .child(uid);
+
+        // צור ID ייחודי (או תוכל להשתמש בשם המתכון, אבל עדיף UUID כדי למנוע כפילויות)
+        String id = userRecipesRef.push().getKey();
+        if (id != null) {
+            currentRecipe.setId(id);
+            currentRecipe.setFavorite(false); // ניתן לבחור אם להוסיף כבר כמועדף או לא
+
+            userRecipesRef.child(id).setValue(currentRecipe)
+                    .addOnSuccessListener(aVoid -> {
+                        Toast.makeText(getContext(), "Recipe added to your list", Toast.LENGTH_SHORT).show();
+                        // אופציונלי: לחזור אחורה
+                        requireActivity().onBackPressed();
+                    })
+                    .addOnFailureListener(e ->
+                            Toast.makeText(getContext(), "Failed to add recipe", Toast.LENGTH_SHORT).show());
+        }
+    }
+
 
 
     private void updateRecipeInFirebase(Recipe recipe) {
@@ -130,63 +173,84 @@ public class RecipeFragment extends Fragment {
         recipeRef.removeValue()
                 .addOnSuccessListener(aVoid -> {
                     Toast.makeText(getContext(), "Recipe deleted", Toast.LENGTH_SHORT).show();
-                    requireActivity().onBackPressed(); // חזרה אחורה אחרי מחיקה
+                    requireActivity().getOnBackPressedDispatcher().onBackPressed(); // חזרה אחורה אחרי מחיקה
                 })
                 .addOnFailureListener(e ->
                         Toast.makeText(getContext(), "Failed to delete", Toast.LENGTH_SHORT).show());
     }
 
-    private void enableEditMode() {
-        isEditMode = true;
+    private void openEditFragment() {
+        Bundle bundle = new Bundle();
+        bundle.putParcelable("recipe", currentRecipe);
 
-        titleTextView.setEnabled(true);
-        ingredientsTextView.setEnabled(true);
-        instructionsTextView.setEnabled(true);
-
-        titleTextView.setBackgroundResource(android.R.drawable.editbox_background);
-        ingredientsTextView.setBackgroundResource(android.R.drawable.editbox_background);
-        instructionsTextView.setBackgroundResource(android.R.drawable.editbox_background);
-
-        // מחליפים את התפריט לתפריט עם "שמור"
-        toolbar.getMenu().clear();
-        toolbar.inflateMenu(R.menu.recipe_edit_menu);
-
-        Toast.makeText(getContext(), "Edit mode enabled", Toast.LENGTH_SHORT).show();
+        NavController navController = Navigation.findNavController(requireView());
+        navController.navigate(R.id.editRecipeFragment, bundle);
     }
-
-    private void saveEditedRecipe() {
-        isEditMode = false;
-
-        currentRecipe.setTitle(titleTextView.getText().toString());
-        currentRecipe.setIngredients(ingredientsTextView.getText().toString());
-        currentRecipe.setInstructions(instructionsTextView.getText().toString());
-
-        updateRecipeInFirebase(currentRecipe);
-
-        // מחזירים את השדות למצב רגיל
-        titleTextView.setEnabled(false);
-        ingredientsTextView.setEnabled(false);
-        instructionsTextView.setEnabled(false);
-
-        titleTextView.setBackgroundResource(0);
-        ingredientsTextView.setBackgroundResource(0);
-        instructionsTextView.setBackgroundResource(0);
-
-        // מחזירים את התפריט המקורי
-        toolbar.getMenu().clear();
-        toolbar.inflateMenu(R.menu.recipe_toolbar_menu);
-
-        // מעדכנים את אייקון הלב בהתאם למצב נוכחי
-        MenuItem favItem = toolbar.getMenu().findItem(R.id.action_toggle_favorite);
-        updateFavoriteIcon(favItem, currentRecipe.isFavorite());
-
-        Toast.makeText(getContext(), "Recipe saved", Toast.LENGTH_SHORT).show();
-    }
-
 
     private void updateFavoriteIcon(MenuItem item, boolean isFavorite) {
         item.setIcon(isFavorite ? R.drawable.ic_favorite : R.drawable.ic_favorite_border);
     }
+
+
+//    private void enableEditMode() {
+//        isEditMode = true;
+//
+//        titleTextView.setEnabled(true);
+//        ingredientsTextView.setEnabled(true);
+//        instructionsTextView.setEnabled(true);
+//
+//        titleTextView.setBackgroundResource(android.R.drawable.editbox_background);
+//        ingredientsTextView.setBackgroundResource(android.R.drawable.editbox_background);
+//        instructionsTextView.setBackgroundResource(android.R.drawable.editbox_background);
+//
+//        showEditMenu();
+//
+//        Toast.makeText(getContext(), "Edit mode enabled", Toast.LENGTH_SHORT).show();
+//    }
+//
+//    private void saveEditedRecipe() {
+//        isEditMode = false;
+//
+//        currentRecipe.setTitle(titleTextView.getText().toString());
+//        currentRecipe.setIngredients(ingredientsTextView.getText().toString());
+//        currentRecipe.setInstructions(instructionsTextView.getText().toString());
+//
+//        updateRecipeInFirebase(currentRecipe);
+//
+//        // מחזירים את השדות למצב רגיל
+//        titleTextView.setEnabled(false);
+//        ingredientsTextView.setEnabled(false);
+//        instructionsTextView.setEnabled(false);
+//
+//        titleTextView.setBackgroundResource(0);
+//        ingredientsTextView.setBackgroundResource(0);
+//        instructionsTextView.setBackgroundResource(0);
+//
+//        showDefaultMenu();
+//
+//        Toast.makeText(getContext(), "Recipe saved", Toast.LENGTH_SHORT).show();
+//    }
+//
+//
+//
+//
+//
+//
+//    private void showDefaultMenu() {
+//        // מחזירים את התפריט המקורי
+//        toolbar.getMenu().clear();
+//        toolbar.inflateMenu(R.menu.recipe_toolbar_menu);
+//
+//        // מעדכנים את אייקון הלב בהתאם למצב נוכחי
+//        MenuItem favItem = toolbar.getMenu().findItem(R.id.action_toggle_favorite);
+//        updateFavoriteIcon(favItem, currentRecipe.isFavorite());
+//    }
+//
+//    private void showEditMenu() {
+//        // מחליפים את התפריט לתפריט עם "שמור"
+//        toolbar.getMenu().clear();
+//        toolbar.inflateMenu(R.menu.recipe_edit_menu);
+//    }
 
 }
 

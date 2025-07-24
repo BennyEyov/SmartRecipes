@@ -7,6 +7,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -19,7 +20,8 @@ import com.google.firebase.auth.FirebaseAuth;
 public class LoginFragment extends Fragment {
 
     private EditText emailEditText, passwordEditText;
-    private Button loginButton, registerRedirectButton;
+    private Button loginButton;
+    private TextView registerRedirectButton;
     private FirebaseAuth mAuth;
 
     public LoginFragment() {
@@ -72,4 +74,16 @@ public class LoginFragment extends Fragment {
                     }
                 });
     }
+
+    @Override
+    public void onResume(){
+        super.onResume();
+        resetFields();
+    }
+
+    private void resetFields() {
+        emailEditText.setText("");
+        passwordEditText.setText("");
+    }
+
 }

@@ -16,12 +16,22 @@
         android:name="com.example.smartrecipes.ui.auth.LoginFragment"
         android:label="fragment_login"
         tools:layout="@layout/fragment_login" >
+
         <action
             android:id="@+id/action_loginFragment_to_homeFragment"
-            app:destination="@id/homeFragment" />
+            app:destination="@id/homeFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+
         <action
             android:id="@+id/action_loginFragment_to_registerFragment"
-            app:destination="@id/registerFragment" />
+            app:destination="@id/registerFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
     </fragment>
 
     <fragment
@@ -29,9 +39,14 @@
         android:name="com.example.smartrecipes.ui.auth.RegisterFragment"
         android:label="fragment_register"
         tools:layout="@layout/fragment_register" >
+
         <action
             android:id="@+id/action_registerFragment_to_loginFragment"
-            app:destination="@id/loginFragment" />
+            app:destination="@id/loginFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
     </fragment>
 
     <fragment
@@ -44,13 +59,31 @@
         android:id="@+id/addRecipeFragment"
         android:name="com.example.smartrecipes.ui.AddRecipeFragment"
         android:label="Add Recipe"
-        tools:layout="@layout/fragment_add_recipe" />
+        tools:layout="@layout/fragment_add_recipe" >
+
+        <action
+            android:id="@+id/action_addRecipeFragment_to_homeFragment"
+            app:destination="@id/homeFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+    </fragment>
 
     <fragment
         android:id="@+id/internetRecipesFragment"
         android:name="com.example.smartrecipes.ui.InternetRecipesFragment"
         android:label="Internet Recipes"
-        tools:layout="@layout/fragment_internet_recipes" />
+        tools:layout="@layout/fragment_internet_recipes" >
+
+        <action
+            android:id="@+id/action_internetRecipesFragment_to_recipeFragment"
+            app:destination="@id/recipeFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+    </fragment>
 
     <fragment
         android:id="@+id/recipeFragment"
@@ -58,5 +91,13 @@
         android:label="Recipe"
         tools:layout="@layout/fragment_recipe" />
 
+    <fragment
+        android:id="@+id/editRecipeFragment"
+        android:name="com.example.smartrecipes.ui.EditRecipeFragment"
+        android:label="Edit Recipe">
+        <argument
+            android:name="recipe"
+            app:argType="com.example.smartrecipes.model.Recipe" />
+    </fragment>
 
 </navigation>

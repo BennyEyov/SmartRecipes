@@ -9,6 +9,7 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.Navigation;
 
 import android.provider.MediaStore;
 import android.view.LayoutInflater;
@@ -18,25 +19,35 @@ import android.widget.*;
 
 import com.example.smartrecipes.R;
 import com.example.smartrecipes.model.Recipe;
+import com.example.smartrecipes.network.cloudinary.CloudinaryClient;
+import com.example.smartrecipes.network.cloudinary.CloudinaryService;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.storage.FirebaseStorage;
+
+import org.json.JSONObject;
 
 import java.io.IOException;
-import java.util.UUID;
+import java.io.InputStream;
+
+import okhttp3.MultipartBody;
+import okhttp3.RequestBody;
+import okhttp3.ResponseBody;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class AddRecipeFragment extends Fragment {
 
     private EditText titleEditText, ingredientsEditText, instructionsEditText;
     private Spinner difficultySpinner;
-    private NumberPicker hourPicker;
-
-    private NumberPicker minutePicker;
-
+    private NumberPicker hourPicker, minutePicker;
     private ImageView recipeImageView;
     private Button saveBtn;
 
     private Uri imageUri;
+//    private boolean isFirstLoad = true;
 
     private static final int PICK_IMAGE_REQUEST = 1;
 
@@ -53,17 +64,38 @@ public class AddRecipeFragment extends Fragment {
         difficultySpinner = view.findViewById(R.id.difficultySpinner);
         hourPicker = view.findViewById(R.id.hourPicker);
         minutePicker = view.findViewById(R.id.minutePicker);
+        recipeImageView  = view.findViewById(R.id.recipeImageView);
+        saveBtn = view.findViewById(R.id.saveRecipeButton);
+
         hourPicker.setMinValue(0);
         hourPicker.setMaxValue(23);
         minutePicker.setMinValue(0);
         minutePicker.setMaxValue(59);
-        recipeImageView  = view.findViewById(R.id.recipeImageView);
-        saveBtn = view.findViewById(R.id.saveRecipeButton);
 
         recipeImageView.setOnClickListener(v -> openImagePicker());
         saveBtn.setOnClickListener(v -> saveRecipe());
 
         return view;
+    }
+
+//    @Override
+//    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+//        super.onViewCreated(view, savedInstanceState);
+//        if (isFirstLoad) {
+//            resetFields();
+//            isFirstLoad = false;
+//        }
+//    }
+
+    private void resetFields() {
+        titleEditText.setText("");
+        ingredientsEditText.setText("");
+        instructionsEditText.setText("");
+        difficultySpinner.setSelection(0);
+        hourPicker.setValue(0);
+        minutePicker.setValue(0);
+        recipeImageView.setImageResource(R.drawable.placeholder_image); // ודא שקובץ כזה קיים בתיקיית drawable
+        imageUri = null;
     }
 
     private void openImagePicker() {
@@ -94,34 +126,76 @@ public class AddRecipeFragment extends Fragment {
         String ingredients = ingredientsEditText.getText().toString();
         String instructions = instructionsEditText.getText().toString();
         String difficulty = difficultySpinner.getSelectedItem().toString();
-        String duration = String.format("%02d:%02d",
-                hourPicker.getValue(), minutePicker.getValue());
+        String duration = String.format("%02d:%02d", hourPicker.getValue(), minutePicker.getValue());
 
         if (imageUri != null) {
-            String fileName = "recipes/" + UUID.randomUUID() + ".jpg";
+            try {
+                InputStream inputStream = requireContext().getContentResolver().openInputStream(imageUri);
+                byte[] imageBytes = new byte[inputStream.available()];
+                inputStream.read(imageBytes);
+                inputStream.close();
 
-            FirebaseStorage.getInstance().getReference(fileName)
-                    .putFile(imageUri)
-                    .addOnSuccessListener(taskSnapshot -> taskSnapshot.getStorage().getDownloadUrl()
-                            .addOnSuccessListener(uri -> {
+                RequestBody requestFile = RequestBody.create(okhttp3.MediaType.parse("image/*"), imageBytes);
+                MultipartBody.Part body = MultipartBody.Part.createFormData("file", "image.jpg", requestFile);
+                RequestBody uploadPreset = RequestBody.create(okhttp3.MultipartBody.FORM, "smartrecipes_preset");
+
+                CloudinaryService service = CloudinaryClient.getService();
+                Call<ResponseBody> call = service.uploadImage(body, uploadPreset);
+
+                call.enqueue(new Callback<ResponseBody>() {
+                    @Override
+                    public void onResponse(@NonNull Call<ResponseBody> call, @NonNull Response<ResponseBody> response) {
+                        if (response.isSuccessful()) {
+                            try {
+                                String responseBody = response.body().string();
+                                JSONObject json = new JSONObject(responseBody);
+                                String imageUrl = json.getString("secure_url");
+
+                                DatabaseReference recipeRef = FirebaseDatabase.getInstance()
+                                        .getReference("recipes")
+                                        .child(uid)
+                                        .push(); // יוצר ID ייחודי
+
+                                String recipeId = recipeRef.getKey();
+
                                 Recipe recipe = new Recipe(
                                         title, ingredients, instructions,
                                         difficulty, duration,
-                                        uri.toString(), false
+                                        imageUrl, false
                                 );
-                                FirebaseDatabase.getInstance()
-                                        .getReference("recipes")
-                                        .child(uid)
-                                        .push()
-                                        .setValue(recipe);
-                                Toast.makeText(getContext(), "Recipe saved", Toast.LENGTH_SHORT).show();
-                            }))
-                    .addOnFailureListener(e -> {
-                        Toast.makeText(getContext(), "Image upload failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    });
+
+                                recipe.setId(recipeId);
+
+                                recipeRef.setValue(recipe)
+                                        .addOnSuccessListener(unused -> {
+                                            Toast.makeText(getContext(), "Recipe saved", Toast.LENGTH_SHORT).show();
+                                            resetFields();
+                                            BottomNavigationView bottomNav = requireActivity().findViewById(R.id.bottom_navigation);
+                                            bottomNav.setSelectedItemId(R.id.homeFragment);
+
+                                        });
+
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                                Toast.makeText(getContext(), "Upload succeeded, but error parsing response", Toast.LENGTH_SHORT).show();
+                            }
+                        } else {
+                            Toast.makeText(getContext(), "Upload failed", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull Call<ResponseBody> call, @NonNull Throwable t) {
+                        Toast.makeText(getContext(), "Upload error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+
+            } catch (IOException e) {
+                e.printStackTrace();
+                Toast.makeText(getContext(), "Error reading image file", Toast.LENGTH_SHORT).show();
+            }
         } else {
             Toast.makeText(getContext(), "Please select an image", Toast.LENGTH_SHORT).show();
         }
-
     }
 }

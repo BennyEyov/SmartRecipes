@@ -22,8 +22,16 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
 
     private List<Recipe> recipeList;
 
+    private boolean isInternet = false;
+
     public RecipeAdapter(List<Recipe> recipeList) {
         this.recipeList = recipeList;
+    }
+
+    // קונסטרקטור עבור מתכונים מהאינטרנט
+    public RecipeAdapter(List<Recipe> recipeList, boolean isInternet) {
+        this.recipeList = recipeList;
+        this.isInternet = isInternet;
     }
 
     @NonNull
@@ -53,6 +61,9 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
         holder.itemView.setOnClickListener(v -> {
             Bundle bundle = new Bundle();
             bundle.putParcelable("recipe", recipe);
+            if (isInternet){
+                bundle.putBoolean("isInternet", true);
+            }
             Navigation.findNavController(v).navigate(R.id.recipeFragment, bundle);
 
         });
