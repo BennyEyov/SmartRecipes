@@ -1,4 +1,4 @@
-package com.example.smartrecipes.api.model;
+package com.example.smartrecipes.api.theMealDB.model;
 
 import com.example.smartrecipes.model.Recipe;
 

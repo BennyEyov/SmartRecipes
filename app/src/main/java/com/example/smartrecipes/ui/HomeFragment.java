@@ -1,4 +1,4 @@
-package com.example.smartrecipes.ui.home;
+package com.example.smartrecipes.ui;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -15,12 +15,14 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
+import androidx.core.view.MenuProvider;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.smartrecipes.R;
+import com.example.smartrecipes.adapter.RecipeAdapter;
 import com.example.smartrecipes.model.Recipe;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
@@ -47,12 +49,12 @@ public class HomeFragment extends Fragment {
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_home, container, false);
 
+        // שיוך ה-toolbar העליון
         Toolbar toolbar = view.findViewById(R.id.homeToolbar);
         toolbar.setTitle("All Recipes");
         toolbar.setTitleTextColor(ContextCompat.getColor(requireContext(), R.color.black));
         toolbar.setTitleTextAppearance(requireContext(), R.style.ToolbarTitleStyle);
         ((AppCompatActivity) requireActivity()).setSupportActionBar(toolbar);
-        setHasOptionsMenu(true); // מאפשר לתפריט להיטען
 
         recyclerView = view.findViewById(R.id.recipesRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -60,10 +62,51 @@ public class HomeFragment extends Fragment {
         recipeAdapter = new RecipeAdapter(recipeList);
         recyclerView.setAdapter(recipeAdapter);
 
+        // הוספת תגובתיות ל-toolbar
+        requireActivity().addMenuProvider(new MenuProvider() {
+            @Override
+            public void onCreateMenu(@NonNull Menu menu, @NonNull MenuInflater menuInflater) {
+                menuInflater.inflate(R.menu.home_toolbar_menu, menu);
+
+                MenuItem searchItem = menu.findItem(R.id.action_search);
+                SearchView searchView = (SearchView) searchItem.getActionView();
+
+                // דואגים לפונקציונליות של כפתור החיפוש
+                searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+                    @Override
+                    public boolean onQueryTextSubmit(String query) {
+                        filterRecipes(query);
+                        return true;
+                    }
+
+                    @Override
+                    public boolean onQueryTextChange(String newText) {
+                        filterRecipes(newText);
+                        return true;
+                    }
+                });
+            }
+
+            @Override
+            public boolean onMenuItemSelected(@NonNull MenuItem menuItem) {
+                int id = menuItem.getItemId();
+
+                if (id == R.id.action_filter) {
+                    showDifficultyFilterDialog();
+                    return true;
+                } else if (id == R.id.action_logout) {
+                    showLogoutConfirmationDialog();
+                    return true;
+                }
+                return false;
+            }
+        }, getViewLifecycleOwner());
+
         loadRecipesFromFirebase();
 
         return view;
     }
+
 
     @Override
     public void onResume() {
@@ -76,46 +119,6 @@ public class HomeFragment extends Fragment {
     }
 
 
-    @Override
-    public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
-        inflater.inflate(R.menu.home_toolbar_menu, menu);
-
-        MenuItem searchItem = menu.findItem(R.id.action_search);
-        SearchView searchView = (SearchView) searchItem.getActionView();
-
-        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
-            @Override
-            public boolean onQueryTextSubmit(String query) {
-                filterRecipes(query);
-                return true;
-            }
-
-            @Override
-            public boolean onQueryTextChange(String newText) {
-                filterRecipes(newText);
-                return true;
-            }
-        });
-
-        super.onCreateOptionsMenu(menu, inflater);
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        int id = item.getItemId();
-
-        if (id == R.id.action_filter) {
-            showDifficultyFilterDialog();
-            return true;
-
-        } else if (id == R.id.action_logout) {
-            showLogoutConfirmationDialog();
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
     private void showLogoutConfirmationDialog() {
         new AlertDialog.Builder(requireContext())
                 .setTitle("Logout")
@@ -123,13 +126,7 @@ public class HomeFragment extends Fragment {
                 .setPositiveButton("Yes", (dialog, which) -> {
                     FirebaseAuth.getInstance().signOut();
 
-                    // ננווט חזרה למסך ההתחברות
-//                    requireActivity()
-//                            .getSupportFragmentManager()
-//                            .popBackStack(null, androidx.fragment.app.FragmentManager.POP_BACK_STACK_INCLUSIVE);
-
-                    // ניווט עם NavController
-                    Bundle bundle = new Bundle(); // אופציונלי
+                    Bundle bundle = new Bundle();
                     Navigation.findNavController(requireView()).navigate(R.id.loginFragment, bundle);
 
                     Toast.makeText(requireContext(), "Logged out", Toast.LENGTH_SHORT).show();
@@ -140,14 +137,6 @@ public class HomeFragment extends Fragment {
 
 
     private void filterRecipes(String query) {
-//        List<Recipe> filteredList = new ArrayList<>();
-//        for (Recipe recipe : recipeList) {
-//            if (recipe.getTitle().toLowerCase().contains(query.toLowerCase()) ||
-//                    recipe.getIngredients().toLowerCase().contains(query.toLowerCase())) {
-//                filteredList.add(recipe);
-//            }
-//        }
-//        recipeAdapter.updateData(filteredList);
         currentQuery = query;
         applyFilters();
     }
@@ -179,16 +168,16 @@ public class HomeFragment extends Fragment {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 recipeList.clear();
-                originalList.clear(); // נוסיף את זה
+                originalList.clear();
 
                 for (DataSnapshot recipeSnapshot : snapshot.getChildren()) {
                     Recipe recipe = recipeSnapshot.getValue(Recipe.class);
                     if (recipe != null) {
                         recipeList.add(recipe);
-                        originalList.add(recipe); // נוסיף את זה
+                        originalList.add(recipe);
                     }
                 }
-                applyFilters(); // במקום להציג ישירות
+                applyFilters();
             }
 
             @Override
@@ -216,10 +205,5 @@ public class HomeFragment extends Fragment {
 
         recipeAdapter.updateData(filteredList);
     }
-
-
-
-
-
 
 }

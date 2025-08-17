@@ -39,10 +39,10 @@
                 android:id="@+id/recipeImageView"
                 android:layout_width="match_parent"
                 android:layout_height="200dp"
-                android:scaleType="centerCrop"
+                android:layout_marginBottom="16dp"
                 android:background="@drawable/image_rounded_background"
                 android:contentDescription="Recipe Image"
-                android:layout_marginBottom="16dp" />
+                android:scaleType="centerCrop" />
 
             <!-- Title -->
             <TextView

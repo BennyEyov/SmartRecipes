@@ -1,9 +1,36 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
+
+    <!-- theme בסיס -->
     <style name="Base.Theme.SmartRecipes" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+
+        <!-- כל כפתורי Button רגילים יקבלו את העיצוב המעוגל שלנו -->
+        <item name="buttonStyle">@style/Widget.SmartRecipes.RoundedButton</item>
+
+        <!-- 2) ואם תשתמש/י ב-MaterialButton, גם הוא יקבל עיצוב מעוגל כתום -->
+        <item name="materialButtonStyle">@style/Widget.SmartRecipes.RoundedMaterialButton</item>
     </style>
 
     <style name="Theme.SmartRecipes" parent="Base.Theme.SmartRecipes" />
+
+    <!-- **** סגנון לכפתור Button רגיל **** -->
+    <style name="Widget.SmartRecipes.RoundedButton" parent="Widget.AppCompat.Button">
+        <!-- מבטל את ה-tint הסגול ומציב רקע מותאם -->
+        <item name="android:background">@drawable/rounded_button</item>
+        <item name="backgroundTint">@null</item>
+
+        <!-- צבע טקסט לבן ונוחות שימוש -->
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="android:paddingLeft">16dp</item>
+        <item name="android:paddingRight">16dp</item>
+    </style>
+
+    <!-- **** סגנון ל-MaterialButton לשמור למקרה הצורך **** -->
+    <style name="Widget.SmartRecipes.RoundedMaterialButton" parent="Widget.Material3.Button">
+        <!-- ל-MaterialButton עדיף tint כתום ורדיוס פינות -->
+        <item name="backgroundTint">@color/primary</item>
+        <item name="cornerRadius">24dp</item>
+        <item name="android:textColor">@android:color/white</item>
+    </style>
+
 </resources>

@@ -6,10 +6,10 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.navigation.Navigation;
 
 import android.provider.MediaStore;
 import android.view.LayoutInflater;
@@ -19,8 +19,8 @@ import android.widget.*;
 
 import com.example.smartrecipes.R;
 import com.example.smartrecipes.model.Recipe;
-import com.example.smartrecipes.network.cloudinary.CloudinaryClient;
-import com.example.smartrecipes.network.cloudinary.CloudinaryService;
+import com.example.smartrecipes.api.cloudinary.CloudinaryClient;
+import com.example.smartrecipes.api.cloudinary.CloudinaryService;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
@@ -45,11 +45,22 @@ public class AddRecipeFragment extends Fragment {
     private NumberPicker hourPicker, minutePicker;
     private ImageView recipeImageView;
     private Button saveBtn;
-
     private Uri imageUri;
-//    private boolean isFirstLoad = true;
 
-    private static final int PICK_IMAGE_REQUEST = 1;
+    private final ActivityResultLauncher<Intent> imagePickerLauncher =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+                if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
+                    imageUri = result.getData().getData();
+                    try {
+                        Bitmap bitmap = MediaStore.Images.Media.getBitmap(
+                                requireActivity().getContentResolver(), imageUri);
+                        recipeImageView.setImageBitmap(bitmap);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+
 
     public AddRecipeFragment() {}
 
@@ -78,15 +89,6 @@ public class AddRecipeFragment extends Fragment {
         return view;
     }
 
-//    @Override
-//    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-//        super.onViewCreated(view, savedInstanceState);
-//        if (isFirstLoad) {
-//            resetFields();
-//            isFirstLoad = false;
-//        }
-//    }
-
     private void resetFields() {
         titleEditText.setText("");
         ingredientsEditText.setText("");
@@ -99,26 +101,10 @@ public class AddRecipeFragment extends Fragment {
     }
 
     private void openImagePicker() {
-        Intent intent = new Intent(Intent.ACTION_PICK,
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-        startActivityForResult(intent, PICK_IMAGE_REQUEST);
+        Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        imagePickerLauncher.launch(intent);
     }
 
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-
-        if (requestCode == PICK_IMAGE_REQUEST && resultCode == Activity.RESULT_OK && data != null) {
-            imageUri = data.getData();
-            try {
-                Bitmap bitmap = MediaStore.Images.Media.getBitmap(
-                        requireActivity().getContentResolver(), imageUri);
-                recipeImageView.setImageBitmap(bitmap);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
 
     private void saveRecipe() {
         String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();

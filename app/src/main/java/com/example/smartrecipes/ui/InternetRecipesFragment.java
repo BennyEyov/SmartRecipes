@@ -2,7 +2,12 @@ package com.example.smartrecipes.ui;
 
 import android.os.Bundle;
 import android.os.Handler;
-import android.view.*;
+import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -11,18 +16,20 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
+import androidx.core.view.MenuProvider;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.smartrecipes.R;
-import com.example.smartrecipes.api.TheMealDBApiService;
-import com.example.smartrecipes.api.TheMealDBClient;
-import com.example.smartrecipes.api.model.Meal;
-import com.example.smartrecipes.api.model.TheMealDBResponse;
+import com.example.smartrecipes.adapter.RecipeAdapter;
+import com.example.smartrecipes.api.theMealDB.TheMealDBApiService;
+import com.example.smartrecipes.api.theMealDB.TheMealDBClient;
+import com.example.smartrecipes.api.theMealDB.model.Meal;
+import com.example.smartrecipes.api.theMealDB.model.TheMealDBResponse;
 import com.example.smartrecipes.model.Recipe;
-import com.example.smartrecipes.ui.home.RecipeAdapter;
 import com.example.smartrecipes.viewmodel.InternetRecipesViewModel;
 
 import java.util.ArrayList;
@@ -32,7 +39,7 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class InternetRecipesFragment extends Fragment {
+public class InternetRecipesFragment extends Fragment implements MenuProvider {
 
     private RecyclerView recyclerView;
     private RecipeAdapter recipeAdapter;
@@ -54,7 +61,9 @@ public class InternetRecipesFragment extends Fragment {
         toolbar.setTitleTextColor(ContextCompat.getColor(requireContext(), R.color.black));
         toolbar.setTitleTextAppearance(requireContext(), R.style.ToolbarTitleStyle);
         ((AppCompatActivity) requireActivity()).setSupportActionBar(toolbar);
-        setHasOptionsMenu(true);
+
+        // הוספת MenuProvider
+        requireActivity().addMenuProvider(this, getViewLifecycleOwner(), Lifecycle.State.RESUMED);
 
         // RecyclerView
         recyclerView = view.findViewById(R.id.internetRecyclerView);
@@ -66,7 +75,7 @@ public class InternetRecipesFragment extends Fragment {
         if (viewModel.originalList.isEmpty()) {
             fetchRecipes();
         } else {
-            applyFilters(); // כבר נטען בעבר
+            applyFilters();
         }
 
         return view;
@@ -108,7 +117,7 @@ public class InternetRecipesFragment extends Fragment {
 
                 @Override
                 public void onFailure(@NonNull Call<TheMealDBResponse> call, @NonNull Throwable t) {
-                    // אפשר להציג שגיאה אם רוצים
+
                 }
             });
         }
@@ -131,8 +140,8 @@ public class InternetRecipesFragment extends Fragment {
     }
 
     @Override
-    public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
-        inflater.inflate(R.menu.internet_toolbar_menu, menu);
+    public void onCreateMenu(@NonNull Menu menu, @NonNull MenuInflater menuInflater) {
+        menuInflater.inflate(R.menu.internet_toolbar_menu, menu);
 
         MenuItem searchItem = menu.findItem(R.id.action_search);
         SearchView searchView = (SearchView) searchItem.getActionView();
@@ -152,13 +161,11 @@ public class InternetRecipesFragment extends Fragment {
                 return true;
             }
         });
-
-        super.onCreateOptionsMenu(menu, inflater);
     }
 
     @Override
-    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        int id = item.getItemId();
+    public boolean onMenuItemSelected(@NonNull MenuItem menuItem) {
+        int id = menuItem.getItemId();
 
         if (id == R.id.action_filter) {
             showDifficultyFilterDialog();
@@ -176,7 +183,7 @@ public class InternetRecipesFragment extends Fragment {
             return true;
         }
 
-        return super.onOptionsItemSelected(item);
+        return false;
     }
 
     private void showDifficultyFilterDialog() {

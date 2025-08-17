@@ -73,7 +73,6 @@
             android:id="@+id/loginButton"
             android:text="Login"
             android:textColor="@android:color/white"
-            android:backgroundTint="@color/primary"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="32dp"

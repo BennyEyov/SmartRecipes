@@ -5,23 +5,21 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.util.Log;
 import android.view.*;
 import android.widget.*;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.*;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
-import androidx.navigation.NavController;
-import androidx.navigation.Navigation;
 
 import com.bumptech.glide.Glide;
 import com.example.smartrecipes.R;
 import com.example.smartrecipes.model.Recipe;
-import com.example.smartrecipes.network.cloudinary.CloudinaryClient;
-import com.example.smartrecipes.network.cloudinary.CloudinaryService;
+import com.example.smartrecipes.api.cloudinary.CloudinaryClient;
+import com.example.smartrecipes.api.cloudinary.CloudinaryService;
 import com.google.android.material.appbar.MaterialToolbar;
-import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.*;
 
@@ -48,6 +46,14 @@ public class EditRecipeFragment extends Fragment {
     private Uri newImageUri = null;
 
     private Recipe currentRecipe;
+
+    private final ActivityResultLauncher<Intent> imagePickerLauncher =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+                if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
+                    newImageUri = result.getData().getData();
+                    imageView.setImageURI(newImageUri); // הצגת התמונה החדשה שנבחרה
+                }
+            });
 
     @Nullable
     @Override
@@ -80,11 +86,7 @@ public class EditRecipeFragment extends Fragment {
         minutePicker.setMinValue(0);
         minutePicker.setMaxValue(59);
 
-        imageView.setOnClickListener(v -> {
-            Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-            startActivityForResult(intent, 1001);
-        });
-
+        imageView.setOnClickListener(v -> openImagePicker());
 
         // טען נתוני מתכון
         Bundle args = getArguments();
@@ -128,15 +130,10 @@ public class EditRecipeFragment extends Fragment {
         });
     }
 
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == 1001 && resultCode == Activity.RESULT_OK && data != null) {
-            newImageUri = data.getData();
-            imageView.setImageURI(newImageUri); // הצגת התמונה החדשה שנבחרה
-        }
+    private void openImagePicker() {
+        Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        imagePickerLauncher.launch(intent);
     }
-
 
     private void saveChanges() {
         currentRecipe.setTitle(titleEditText.getText().toString());
@@ -182,9 +179,7 @@ public class EditRecipeFragment extends Fragment {
                                 recipeRef.setValue(currentRecipe)
                                         .addOnSuccessListener(aVoid -> {
                                             Toast.makeText(getContext(), "Recipe updated", Toast.LENGTH_SHORT).show();
-                                            Log.d("im here", "im here");
                                             requireActivity().getOnBackPressedDispatcher().onBackPressed();
-//                                            Navigation.findNavController(requireView()).navigate(R.id.homeFragment);
                                         })
                                         .addOnFailureListener(e -> {
                                             Toast.makeText(getContext(), "Update failed", Toast.LENGTH_SHORT).show();
@@ -215,23 +210,11 @@ public class EditRecipeFragment extends Fragment {
             recipeRef.setValue(currentRecipe)
                     .addOnSuccessListener(aVoid -> {
                         Toast.makeText(getContext(), "Recipe updated", Toast.LENGTH_SHORT).show();
-                        Log.d("im here", "im here");
                         requireActivity().getOnBackPressedDispatcher().onBackPressed();
-//                                            Navigation.findNavController(requireView()).navigate(R.id.homeFragment);
-
                     })
                     .addOnFailureListener(e -> {
                         Toast.makeText(getContext(), "Update failed", Toast.LENGTH_SHORT).show();
                     });
         }
-    }
-
-
-    private void returnToRecipeFragment() {
-        Bundle result = new Bundle();
-        result.putParcelable("recipe", currentRecipe);
-
-        getParentFragmentManager().setFragmentResult("edit_result", result);
-        Navigation.findNavController(requireView()).popBackStack();
     }
 }

@@ -1,4 +1,4 @@
-package com.example.smartrecipes.ui.auth;
+package com.example.smartrecipes.ui;
 
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -33,19 +33,16 @@ public class LoginFragment extends Fragment {
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_login, container, false);
 
-        // Initialize FirebaseAuth instance
         mAuth = FirebaseAuth.getInstance();
 
-        // Bind views
         emailEditText = view.findViewById(R.id.emailEditText);
         passwordEditText = view.findViewById(R.id.passwordEditText);
         loginButton = view.findViewById(R.id.loginButton);
         registerRedirectButton = view.findViewById(R.id.registerRedirectButton);
 
-        // Login
         loginButton.setOnClickListener(v -> loginUser());
 
-        // Navigate to RegisterFragment
+
         registerRedirectButton.setOnClickListener(v -> NavHostFragment.findNavController(this)
                 .navigate(R.id.action_loginFragment_to_registerFragment));
 
@@ -69,7 +66,7 @@ public class LoginFragment extends Fragment {
                                 .navigate(R.id.action_loginFragment_to_homeFragment);
                     } else {
                         Toast.makeText(getContext(),
-                                "Login failed: " + task.getException().getMessage(),
+                                "Login failed, invalid credentials",
                                 Toast.LENGTH_LONG).show();
                     }
                 });

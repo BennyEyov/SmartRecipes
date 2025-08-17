@@ -13,7 +13,7 @@
 
         <!-- לוגו או כותרת -->
         <TextView
-            android:id="@+id/loginTitle"
+            android:id="@+id/registerTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Create Account"
@@ -33,7 +33,7 @@
             android:padding="16dp"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/loginTitle"
+            app:layout_constraintTop_toBottomOf="@id/registerTitle"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginTop="32dp" />
@@ -55,9 +55,8 @@
         <!-- Login Button -->
         <Button
             android:id="@+id/registerButton"
-            android:text="Login"
+            android:text="Register"
             android:textColor="@android:color/white"
-            android:backgroundTint="@color/primary"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="32dp"

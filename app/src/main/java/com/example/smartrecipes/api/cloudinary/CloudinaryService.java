@@ -1,4 +1,4 @@
-package com.example.smartrecipes.network.cloudinary;
+package com.example.smartrecipes.api.cloudinary;
 
 import okhttp3.MultipartBody;
 import okhttp3.ResponseBody;

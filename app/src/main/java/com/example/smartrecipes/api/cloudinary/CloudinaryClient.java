@@ -1,4 +1,4 @@
-package com.example.smartrecipes.network.cloudinary;
+package com.example.smartrecipes.api.cloudinary;
 
 import retrofit2.Retrofit;
 import retrofit2.converter.scalars.ScalarsConverterFactory;

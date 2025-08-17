@@ -1,4 +1,4 @@
-package com.example.smartrecipes.api;
+package com.example.smartrecipes.api.theMealDB;
 
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;

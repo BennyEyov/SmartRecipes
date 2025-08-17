@@ -1,4 +1,4 @@
-package com.example.smartrecipes.ui.home;
+package com.example.smartrecipes.adapter;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -11,6 +11,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.navigation.Navigation;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.bitmap.CenterCrop;
+import com.bumptech.glide.load.resource.bitmap.RoundedCorners;
 import com.example.smartrecipes.R;
 import com.example.smartrecipes.model.Recipe;
 
@@ -53,6 +55,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
             Glide.with(holder.itemView.getContext())
                     .load(recipe.getImageUrl())
                     .placeholder(R.drawable.placeholder_image)
+                    .transform(new CenterCrop(), new RoundedCorners(16)) // חיתוך עם פינות מעוגלות
                     .into(holder.recipeImageView);
         } else {
             holder.recipeImageView.setImageResource(R.drawable.placeholder_image);

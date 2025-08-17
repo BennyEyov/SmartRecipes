@@ -1,4 +1,4 @@
-package com.example.smartrecipes.ui.auth;
+package com.example.smartrecipes.ui;
 
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -17,11 +17,8 @@ import androidx.navigation.fragment.NavHostFragment;
 import com.example.smartrecipes.R;
 import com.example.smartrecipes.model.Recipe;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +31,7 @@ public class RegisterFragment extends Fragment {
     private FirebaseAuth mAuth;
 
     public RegisterFragment() {
-        // Required empty public constructor
+        // בשביל הפיירבייס
     }
 
     @Override
